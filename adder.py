@@ -53,10 +53,13 @@ if __name__ == '__main__':
         # Disable the showing of SSL warning from request library
         requests.packages.urllib3.disable_warnings()
 
+        # Ask for the password if not given using commandline
         if args.password == None:
             password = getpass.getpass("Enter password for "+ args.username+":")
         else:
             password = args.password
+
+        # API url to get the Authentication ticket for further use.
         url_ticket = 'https://'+ args.apic +'/api/v1/ticket'
         json = dict(
             username=args.username,
@@ -69,27 +72,33 @@ if __name__ == '__main__':
         data = ticket_request.json()
         token = data['response']['serviceTicket']
         print("Got the token: "+token+ " for the next "+str(data['response']['sessionTimeout'])+" Secconds")
-        print("Requesting network devices...")
-        url_network_devices_count = 'https://' + args.apic + '/api/v1/network-device/count'
         headers = {'X-Auth-Token': token}
-        #pprint(headers)
-        count_request = requests.get(url_network_devices_count, headers=headers, verify=False)
-        num_devices = count_request.json()['response']
-        print("Listing all network devices("+str(num_devices)+"):")
 
-        url_network_devices = 'https://' + args.apic + '/api/v1/network-device'
-        headers = {'X-Auth-Token': token}
-        #pprint(headers)
-        count_request = requests.get(url_network_devices, headers=headers, verify=False)
-        num_devices = count_request.json()
-        for devs in num_devices['response']:
-            pprint(devs['hostname'])
+        if debug:
+            print("Requesting network devices...")
+            url_network_devices_count = 'https://' + args.apic + '/api/v1/network-device/count'
+            headers = {'X-Auth-Token': token}
+            #pprint(headers)
+            count_request = requests.get(url_network_devices_count, headers=headers, verify=False)
+            num_devices = count_request.json()['response']
+            print("Listing all network devices("+str(num_devices)+"):")
+            url_network_devices = 'https://' + args.apic + '/api/v1/network-device'
+
+            #pprint(headers)
+            count_request = requests.get(url_network_devices, headers=headers, verify=False)
+            num_devices = count_request.json()
+            for devs in num_devices['response']:
+                pprint(devs['hostname'])
 
         if not args.dryrun:
             print("Adding discovery Jobs...")
+
+            # Opening list of devices
             file = open(args.file, 'r', newline=None)
             for line in file:
                 print(args.prefix + line.strip() + "... ", end='')
+
+                # API Url for discovery task
                 url_network_devices = 'https://' + args.apic + '/api/v1/discovery'
                 device_addition = dict(
                     cdpLevel=args.cdplevel,
