@@ -23,7 +23,7 @@ import json
 if __name__ == '__main__':
     parser = ArgumentParser(description='Select options.')
     # Input parameters
-    parser.add_argument('--file', type=str,
+    parser.add_argument('--file', type=str, default='hosts.txt',
                         help="file to parse one seed IP on each line")
     parser.add_argument('--apic', type=str,
                         help="IP/hostname of APIC-EM Cluster")
@@ -33,6 +33,8 @@ if __name__ == '__main__':
                         help="password")
     parser.add_argument('--prefix', type=str, default="Auto_",
                         help="Prefix to add to all jobs")
+    parser.add_argument('--cdplevel', type=int, default=5,
+                        help="cdpLevel: CDP level to which neighbor devices to be discovered,")
     parser.add_argument('--debug', action="store_true",
                         help="Only do a test run without loging in to the devices")
     parser.add_argument('--dryrun', action="store_true",
@@ -83,4 +85,21 @@ if __name__ == '__main__':
         for devs in num_devices['response']:
             pprint(devs['hostname'])
 
+        if not args.dryrun:
+            print("Adding discovery Jobs...")
+            file = open(args.file, 'r', newline=None)
+            for line in file:
+                print(args.prefix + line.strip() + "... ", end='')
+                url_network_devices = 'https://' + args.apic + '/api/v1/discovery'
+                device_addition = dict(
+                    cdpLevel=args.cdplevel,
+                    name=args.prefix + line.strip(),
+                    discoveryType="auto cdp discovery",
+                    ipAddressList=line.strip(),
+                    protocolOrder="ssh"
+                )
 
+                discovery_request = requests.post(url_network_devices, json=device_addition, headers=headers, verify=False)
+                print(discovery_request.status_code)
+                if debug:
+                    pprint(discovery_request.json())
