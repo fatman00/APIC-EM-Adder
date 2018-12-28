@@ -46,7 +46,7 @@ if __name__ == '__main__':
         print("missing filename or device")
         sys.exit(1)
 
-    #Creap code begining right now
+    #Crap code begining right now
     if args.file is not None:
         print("Starting script...")
 
